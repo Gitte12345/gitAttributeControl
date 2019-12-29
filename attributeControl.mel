@@ -1,5 +1,5 @@
 /*
-tk_attributeControl.0.2.mel
+tk_attributeControl.0.4.mel
 Thomas Kutschera
 nov 2017
 www.pixomondo.com
@@ -8,15 +8,21 @@ www.pixomondo.com
 global proc cShrinkWin(string $windowToClose)
 {
 	window -e -h 20 $windowToClose;
-	window -e -w 360 $windowToClose;
+	window -e -w 420 $windowToClose;
 }
 
-proc cOn(string $type, int $state)
+proc cSetToInt(string $type, int $state)
 {
 	$mySel = `ls -sl`;
 	
 	if ($type == "renderSmoothLevel")
-		$state = `intField -q -v fRenderLevel`;
+		$state = `intField -q -v fRenderLevel`;	
+	if ($type == "smoothLevel")
+		$state = `intField -q -v fSmoothLevel`;	
+	if ($type == "aiSubdivIterations")
+		$state = `intField -q -v fAiIterations`;
+		
+		
 
 	for ($obj in $mySel)
 	{
@@ -28,16 +34,53 @@ proc cOn(string $type, int $state)
 			for ($s in $shapes)
 			{
 				setAttr ($s + "." + $type) $state;
-					print "\n set ";
-					print ($s + "." + $type);
-					print " --> ";
-					print $state;
 			}
 		}
 	}
 }
 
-proc cSetMesh(string $command, int $state)
+proc cSetToString(string $attribute, string $content)
+{
+	$mySel = `ls -sl`;
+	$text = `textField -q -tx $content`;
+	
+	for ($obj in $mySel)
+	{
+		if (`attributeExists $attribute $obj` == 1)
+			setAttr -type "string" ($obj + "." + $attribute) $text;
+		else
+		{				
+			$shapes = `listRelatives -s $obj`;
+			for ($s in $shapes)
+			{
+				setAttr -type "string" ($s + "." + $attribute) $text;
+			}
+		}
+	}
+}
+
+proc cSetToFloat(string $attribute, string $field)
+{
+	$mySel = `ls -sl`;
+	
+	$value = `floatField -q -v $field`;
+	
+	for ($obj in $mySel)
+	{
+		if (`attributeExists $attribute $obj` == 1)
+			setAttr -type "string" ($obj + "." + $attribute) $value;
+		else
+		{				
+			$shapes = `listRelatives -s $obj`;
+			for ($s in $shapes)
+			{
+				setAttr ($s + "." + $attribute) $value;
+			}
+		}
+	}
+}
+
+proc cSetToEval(string $command, int $state)
 {
 	$mySel = `ls -sl`;
 	for ($obj in $mySel)
@@ -56,7 +99,7 @@ proc cSetMesh(string $command, int $state)
 global proc tk_attributeControl()
 {
 
-$ver = "v0.2";
+$ver = "v0.4";
 int $windowStartHeight = 50;
 int $windowStartWidth = 360;
 int $bh1 = 18;
@@ -77,70 +120,186 @@ $myWindow = `window -title ("Attribute Control " + $ver) -s 1 -wh $windowStartHe
 	columnLayout -adj 1;
 	frameLayout -l "List Attributes" -cll 1 -cl 0 -bs "in" -bgc .2 .2 .2 -cc "cShrinkWin(\"win_tk_attributeControl\")" flMeshes; 
 	{
-		string $form = `formLayout`;
-		string $tabs = `tabLayout -innerMarginWidth 5 -innerMarginHeight 5`;
+		$form = `formLayout`;
+		tabLayout -innerMarginWidth 5 -innerMarginHeight 5 tTab1;
 		formLayout 
-			-edit -attachForm $tabs "top"    0
-			-attachForm $tabs "left"   0
-			-attachForm $tabs "bottom" 0
-			-attachForm $tabs "right"  0
+			-edit -attachForm tTab1 "top"    0
+			-attachForm tTab1 "left"   0
+			-attachForm tTab1 "bottom" 0
+			-attachForm tTab1 "right"  0
 			$form;
 			
 		string $child1 = `rowColumnLayout -numberOfColumns 2`;
 		setParent ..;
 		
-		string $child2 = `rowColumnLayout -nc 3 -cw 1 180 -cw 2 90 -cw 3 90`;
-		
-			text "Smooth Mesh Preview";
-			button -l "On" -c "cSetMesh(\"setDisplaySmoothness\", 3)";
-			button -l "Off" -c "cSetMesh(\"setDisplaySmoothness\", 1)";
-			
-			text "Use Smooth For Rendering";
-			button -l "On" -c "cOn(\"useSmoothPreviewForRender\", 1)";
-			button -l "Off" -c "cOn(\"useSmoothPreviewForRender\", 0)";					
-			
-			text "Render Level";
-			intField -min 0 -max 5 -v 2 fRenderLevel;
-			button -l "Set" -c "cOn(\"renderSmoothLevel\", 0)";			
-			
-			text "Visibility";
-			button -l "On" -c "cOn(\"visibility\", 1)";
-			button -l "Off" -c "cOn(\"visibility\", 0)";
+		string $child2 = `columnLayout -adj 1`;
+		frameLayout -l "Mesh Preview" -cll 1 -cl 0 -cc "cShrinkWin(\"win_tk_attributeControl\")";
+		{
+			rowColumnLayout -nc 3 -cw 1 180 -cw 2 120 -cw 3 120;
+				text -al "left" "Smooth Mesh Preview";
+				button -l "On" -c "cSetToEval(\"setDisplaySmoothness\", 3)";
+				button -l "Off" -c "cSetToEval(\"setDisplaySmoothness\", 1)";
 				
-			text "Cast Shadows";
-			button -l "On" -c "cOn(\"castsShadows\", 1)";
-			button -l "Off" -c "cOn(\"castsShadows\", 0)";
-			
-			text "Receive Shadows";
-			button -l "On" -c "cOn(\"receiveShadows\", 1)";
-			button -l "Off" -c "cOn(\"receiveShadows\", 0)";
-			
-			text "Primary Visibility";
-			button -l "On" -c "cOn(\"primaryVisibility\", 1)";
-			button -l "Off" -c "cOn(\"primaryVisibility\", 0)";
+				text -al "left" "Smooth Preview";
+				intField -min 0 -max 5 -v 2 fSmoothLevel;
+				button -bgc .4 .3 .3  -l "Set" -c "cSetToInt(\"smoothLevel\", 0)";	
 				
-			text "Visible Reflections";
-			button -l "On" -c "cOn(\"visibleInReflections\", 1)";
-			button -l "Off" -c "cOn(\"visibleInReflections\", 0)";
-			
-			text "Visible Refractions";
-			button -l "On" -c "cOn(\"visibleInRefractions\", 1)";
-			button -l "Off" -c "cOn(\"visibleInRefractions\", 0)";
-			
-			text "Double Sided";
-			button -l "On" -c "cOn(\"doubleSided\", 1)";
-			button -l "Off" -c "cOn(\"doubleSided\", 0)";
-			
-			
-			
-			
+				text -al "left" "Use Smooth For Rendering";
+				button -l "On" -c "cSetToInt(\"useSmoothPreviewForRender\", 1)";
+				button -l "Off" -c "cSetToInt(\"useSmoothPreviewForRender\", 0)";					
+				
+				text -al "left" "Render Level";
+				intField -min 0 -max 5 -v 2 fRenderLevel;
+				button -bgc .4 .3 .3  -l "Set" -c "cSetToInt(\"renderSmoothLevel\", 0)";			
+	
+
+				text -al "left" "Visibility";
+				button -l "On" -c "cSetToInt(\"visibility\", 1)";
+				button -l "Off" -c "cSetToInt(\"visibility\", 0)";
+				
+				setParent ..;
 			setParent ..;
+		}
 		
-		string $child3 = `rowColumnLayout -numberOfColumns 2`;
+		frameLayout -l "Render Stats" -cll 1 -cl 0 -cc "cShrinkWin(\"win_tk_attributeControl\")";
+		{
+			rowColumnLayout -nc 3 -cw 1 180 -cw 2 120 -cw 3 120;
+				text -al "left" "Cast Shadows";
+				button -l "On" -c "cSetToInt(\"castsShadows\", 1)";
+				button -l "Off" -c "cSetToInt(\"castsShadows\", 0)";
+				
+				text -al "left" "Receive Shadows";
+				button -l "On" -c "cSetToInt(\"receiveShadows\", 1)";
+				button -l "Off" -c "cSetToInt(\"receiveShadows\", 0)";
+				
+				text -al "left" "Primary Visibility";
+				button -l "On" -c "cSetToInt(\"primaryVisibility\", 1)";
+				button -l "Off" -c "cSetToInt(\"primaryVisibility\", 0)";
+					
+				text -al "left" "Visible Reflections";
+				button -l "On" -c "cSetToInt(\"visibleInReflections\", 1)";
+				button -l "Off" -c "cSetToInt(\"visibleInReflections\", 0)";
+				
+				text -al "left" "Visible Refractions";
+				button -l "On" -c "cSetToInt(\"visibleInRefractions\", 1)";
+				button -l "Off" -c "cSetToInt(\"visibleInRefractions\", 0)";
+				
+				text -al "left" "Double Sided";
+				button -l "On" -c "cSetToInt(\"doubleSided\", 1)";
+				button -l "Off" -c "cSetToInt(\"doubleSided\", 0)";
+			
+				setParent ..;
+			setParent ..;
+		}
+		
+		frameLayout -l "Arnold Visibility" -cll 1 -cl 0 -cc "cShrinkWin(\"win_tk_attributeControl\")";
+		{
+			rowColumnLayout -nc 3 -cw 1 180 -cw 2 120 -cw 3 120;
+				text -al "left" "Opaque";
+				button -l "On" -c "cSetToInt(\"aiOpaque\", 1)";
+				button -l "Off" -c "cSetToInt(\"aiOpaque\", 0)";
+				
+				text -al "left" "Matte";
+				button -l "On" -c "cSetToInt(\"aiMatte\", 1)";
+				button -l "Off" -c "cSetToInt(\"aiMatte\", 0)";
+					
+				text -al "left" "Visible In Diffuse";
+				button -l "On" -c "cSetToInt(\"aiVisibleInDiffuse\", 1)";
+				button -l "Off" -c "cSetToInt(\"aiVisibleInDiffuse\", 0)";
+				
+				text -al "left" "Visible In Reflections";
+				button -l "On" -c "cSetToInt(\"aiVisibleInGlossy\", 1)";
+				button -l "Off" -c "cSetToInt(\"aiVisibleInGlossy\", 0)";	
+				
+				text -al "left" "SSS Set Name";
+				textField -tx " " tfSssSetName;
+				button -bgc .4 .3 .3 -l "Set" -c "cSetToString(\"aiSssSetname\", \"tfSssSetName\")";	
+			
+				setParent ..;
+			setParent ..;
+		}
+		
+		frameLayout -l "Arnold Subdivision" -cll 1 -cl 0 -cc "cShrinkWin(\"win_tk_attributeControl\")";
+		{
+			columnLayout -adj 1;
+				rowColumnLayout -nc 4 -cw 1 180 -cw 2 80 -cw 3 80 -cw 4 80;
+					text -al "left" "Type";
+					button -l "None" -c "cSetToInt(\"aiSubdivType\", \"0\")";
+					button -l "Linear" -c "cSetToInt(\"aiSubdivType\", \"1\")";
+					button -l "Catclark" -c "cSetToInt(\"aiSubdivType\", \"2\")";
+					setParent..;
+				
+				rowColumnLayout -nc 3 -cw 1 180 -cw 2 120 -cw 3 120;
+					text -al "left" "Iterations";
+					intField -min 0 -max 5 -v 2 fAiIterations;
+					button -bgc .4 .3 .3  -l "Set" -c "cSetToInt(\"aiSubdivIterations\", 0)";			
+					setParent..;
+						
+				rowColumnLayout -nc 4 -cw 1 180 -cw 2 80 -cw 3 80 -cw 4 80;
+					text -al "left" "Adaptive Metric";
+					button -l "Auto" -c "cSetToInt(\"aiSubdivAdaptiveMetric\", \"0\")";
+					button -l "Edge Lenth" -c "cSetToInt(\"aiSubdivAdaptiveMetric\", \"1\")";
+					button -l "Flat" -c "cSetToInt(\"aiSubdivAdaptiveMetric\", \"2\")";
+					setParent..;
+				
+				rowColumnLayout -nc 3 -cw 1 180 -cw 2 120 -cw 3 120;
+					text -al "left" "Adaptive Error";
+					floatField -min 0.000 -v 0.000 fAiSubdivPixelError;
+					button -bgc .4 .3 .3  -l "Set" -c "cSetToFloat(\"aiSubdivPixelError\", \"fAiSubdivPixelError\")";			
+
+					text -al "left" "Adaptive Space";
+					button -l "Raster" -c "cSetToInt(\"aiSubdivAdaptiveSpace\", 0)";
+					button -l "Object" -c "cSetToInt(\"aiSubdivAdaptiveSpace\", 1)";	
+					setParent..;
+				
+				rowColumnLayout -nc 5 -cw 1 180 -cw 2 60 -cw 3 60 -cw 4 60 -cw 5 60;
+					text -al "left" "UV Smoothing";
+					button -l "Corners" -c "cSetToInt(\"aiSubdivUvSmoothing\", 0)";
+					button -l "Borders" -c "cSetToInt(\"aiSubdivUvSmoothing\", 1)";	
+					button -l "Linear" -c "cSetToInt(\"aiSubdivUvSmoothing\", 2)";
+					button -l "Smooth" -c "cSetToInt(\"aiSubdivUvSmoothing\", 3)";	
+					setParent..;
+				
+				rowColumnLayout -nc 3 -cw 1 180 -cw 2 120 -cw 3 120;
+					text -al "left" "Smooth Tangents";
+					button -l "On" -c "cSetToInt(\"aiSubdivSmoothDerivs\", 1)";
+					button -l "Off" -c "cSetToInt(\"aiSubdivSmoothDerivs\", 0)";	
+				
+					setParent ..;
+				setParent ..;
+			setParent ..;
+		}
+		
+		frameLayout -l "Arnold Displacement" -cll 1 -cl 0 -cc "cShrinkWin(\"win_tk_attributeControl\")";
+		{
+			rowColumnLayout -nc 3 -cw 1 180 -cw 2 120 -cw 3 120;
+				
+				text -al "left" "Height";
+				floatField -min 0.000 -v 0.000 fAiDispHeight;
+				button -bgc .4 .3 .3  -l "Set" -c "cSetToFloat(\"aiDispHeight\", \"fAiDispHeight\")";			
+				
+				text -al "left" "Padding";
+				floatField -min 0.000 -v 0.000 fAiDispPadding;
+				button -bgc .4 .3 .3  -l "Set" -c "cSetToFloat(\"aiDispPadding\", \"fAiDispPadding\")";			
+				
+				text -al "left" "Zero Value";
+				floatField -min 0.000 -v 0.000 fAiDispZeroValue;
+				button -bgc .4 .3 .3  -l "Set" -c "cSetToFloat(\"aiDispZeroValue\", \"fAiDispZeroValue\")";			
+								
+				text -al "left" "Auto Bump";
+				button -l "On" -c "cSetToInt(\"aiDispAutobump\", 1)";	
+				button -l "Off" -c "cSetToInt(\"aiDispAutobump\", 0)";	
+			
+				setParent ..;
+			setParent ..;
+		}
+		setParent ..;
+
+		string $child9 = `rowColumnLayout -numberOfColumns 2`;
 		setParent ..;
 		
-		tabLayout -edit -tabLabel $child1 "Transform" -tabLabel $child2 "Meshes" -tabLabel $child3 "Lights" $tabs;
-		tabLayout -e -st  $child2 $tabs;
+		tabLayout -edit -tabLabel $child1 "Transform" -tabLabel $child2 "Meshes" -tabLabel $child9 "Lights" tTab1;
+		tabLayout -e -st  $child2 tTab1;
 
 	}
 
