@@ -1,0 +1,129 @@
+/*
+tk_attributeControl.0.1.mel
+Thomas Kutschera
+nov 2017
+www.pixomondo.com
+*/
+
+global proc cShrinkWin(string $windowToClose)
+{
+	window -e -h 20 $windowToClose;
+	window -e -w 360 $windowToClose;
+}
+
+proc cOn(string $type, int $state)
+{
+	$mySel = `ls -sl`;
+	
+	if ($type == "renderSmoothLevel")
+		$state = `intField -q -v fRenderLevel`;
+
+	for ($obj in $mySel)
+	{
+		if (`attributeExists $type $obj` == 1)
+			setAttr ($obj + "." + $type) $state;
+		else
+		{				
+			$shapes = `listRelatives -s $obj`;
+			for ($s in $shapes)
+			{
+				setAttr ($s + "." + $type) $state;
+					print "\n set ";
+					print ($s + "." + $type);
+					print " --> ";
+					print $state;
+			}
+		}
+	}
+}
+
+proc cSetMesh(string $command, int $state)
+{
+	$mySel = `ls -sl`;
+	for ($obj in $mySel)
+	{
+		$cmd1 = " ";
+		$cmd2 = string($state);
+		$cmd = $command + $cmd1 + $cmd2; 
+		eval $cmd;
+	}
+}
+
+
+
+
+///////////////////// window ////////////////////////////
+global proc tk_attributeControl()
+{
+
+$ver = "v0.1";
+int $windowStartHeight = 50;
+int $windowStartWidth = 360;
+int $bh1 = 18;
+int $bh2 = 22;
+
+$nucEnable = 0;
+$nucStartFrame = 1;
+$nucSubstep = 4; 
+$nucCollSubstep = 3; 
+
+if( `window -exists win_tk_attributeControl` )
+	deleteUI win_tk_attributeControl;
+
+$myWindow = `window -title ("Attribute Control " + $ver) -s 1 -wh $windowStartHeight $windowStartWidth win_tk_attributeControl`;
+
+	/* -------------------- windowStart ------------------------- */
+
+	columnLayout -adj 1;
+	frameLayout -l "List Attributes" -cll 1 -cl 0 -bs "in" -bgc .2 .2 .2 -cc "cShrinkWin(\"win_tk_attributeControl\")" flMeshes; 
+	{
+		string $form = `formLayout`;
+		string $tabs = `tabLayout -innerMarginWidth 5 -innerMarginHeight 5`;
+		formLayout 
+			-edit -attachForm $tabs "top"    0
+			-attachForm $tabs "left"   0
+			-attachForm $tabs "bottom" 0
+			-attachForm $tabs "right"  0
+			$form;
+			
+		string $child1 = `rowColumnLayout -numberOfColumns 2`;
+		setParent ..;
+		
+		// string $child2 = `rowColumnLayout -numberOfColumns 2`;
+		string $child2 = `rowColumnLayout -nc 3 -cw 1 180 -cw 2 90 -cw 3 90`;
+		
+			text "Smooth Mesh Preview";
+			button -l "On" -c "cSetMesh(\"setDisplaySmoothness\", 3)";
+			button -l "Off" -c "cSetMesh(\"setDisplaySmoothness\", 1)";
+			
+			text "Use Smooth For Rendering";
+			button -l "On" -c "cOn(\"useSmoothPreviewForRender\", 1)";
+			button -l "Off" -c "cOn(\"useSmoothPreviewForRender\", 0)";					
+			
+			text "Render Level";
+			intField -v 2 -min 0 -max 5 fRenderLevel;
+			button -l "Set" -c "cOn(\"renderSmoothLevel\", 0)";			
+			
+			text "Visibility";
+			button -l "On" -c "cOn(\"visibility\", 1)";
+			button -l "Off" -c "cOn(\"visibility\", 0)";
+		// frameLayout -l "" -cll 0 -cl 0 -bs "in" -bgc .2 .2 .2 -cc "cShrinkWin(\"win_tk_attributeControl\")" flMeshes; 	
+			
+		separator; 
+			string $child2 = `rowColumnLayout -nc 3 -cw 1 180 -cw 2 90 -cw 3 90`;
+		
+		setParent ..;
+		
+		string $child3 = `rowColumnLayout -numberOfColumns 2`;
+		setParent ..;
+		
+		tabLayout -edit -tabLabel $child1 "Transform" -tabLabel $child2 "Meshes" -tabLabel $child3 "Lights" $tabs;
+		tabLayout -e -st  $child2 $tabs;
+
+	}
+
+	showWindow $myWindow;
+	cShrinkWin("win_tk_attributeControl");
+}
+tk_attributeControl();
+	
