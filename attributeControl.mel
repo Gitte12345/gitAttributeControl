@@ -26,6 +26,10 @@ proc cDefineClothListGlobals()
 
 global proc cShrinkWin(string $windowToClose)
 {
+	// additional info lines
+	// additional info lines
+	// additional info lines
+	// additional info lines
 	window -e -h 20 $windowToClose;
 	window -e -w 420 $windowToClose;
 }
