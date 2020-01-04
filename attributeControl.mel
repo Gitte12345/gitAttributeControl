@@ -3,26 +3,12 @@ tk_attributeControl.1.2.mel
 Thomas Kutschera
 nov 2017
 www.pixomondo.com
+edited by johannes
+two more lines
+deleted proc:
+	cDefineClothListGlobals()
 */
 
-
-proc cDefineClothListGlobals()
-{
-	global string $clothAttrPresetList[];
-	clear $clothAttrPresetList;
-
-	$clothAttrPresetList = {
-	" ", "collide",		
-	"selfCollide", "friction",			
-	"stretchResistance",
-	"compressionResistance", "bendResistance",
-	"inputMeshAttract", "inputAttractDamp",
-	"inputMotionDrag", "pointMass",
-	"lift", "drag",
-	"tangentialDrag", "inWorldMatrix",
-	"damp", "stretchDamp"
-	};
-}
 
 global proc cShrinkWin(string $windowToClose)
 {
